@@ -22,20 +22,26 @@ async function countPages(pdfBuffer: Buffer): Promise<number> {
 }
 
 /** Renders at progressively tighter densities until the PDF fits on one
- * page, falling back to the tightest tier if it never does. */
-async function renderSinglePage(resumeData: ResumeData, template: ResumeTemplate): Promise<Buffer> {
+ * page, falling back to the tightest tier if it never does — that fallback
+ * case is reported back via pageCount so the caller can warn the user
+ * instead of silently shipping a multi-page file. */
+async function renderSinglePage(
+  resumeData: ResumeData,
+  template: ResumeTemplate
+): Promise<{ buffer: Buffer; pageCount: number }> {
   const elements = DENSITY_TIERS.map((density) => (
     <ResumePdfDocument key={density} data={resumeData} template={template} density={density} />
   ));
 
   let buffer: Buffer | null = null;
+  let pageCount = Infinity;
   for (const element of elements) {
     const candidate = await renderToBuffer(element);
     buffer = candidate;
-    const pageCount = await countPages(candidate);
+    pageCount = await countPages(candidate);
     if (pageCount <= 1) break;
   }
-  return buffer!;
+  return { buffer: buffer!, pageCount };
 }
 
 export async function POST(req: NextRequest) {
@@ -45,13 +51,15 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const buffer = await renderSinglePage(resumeData, template);
+    const { buffer, pageCount } = await renderSinglePage(resumeData, template);
     const fileName = `${(resumeData.contact.fullName || "resume").replace(/\s+/g, "_")}_Resume.pdf`;
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${fileName}"`,
+        "X-Resume-Page-Count": String(pageCount),
+        "Access-Control-Expose-Headers": "X-Resume-Page-Count",
       },
     });
   } catch (err) {

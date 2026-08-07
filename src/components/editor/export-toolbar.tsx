@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { ResumeData, ResumeTemplate } from "@/types/resume";
 import { resumeToPlainText } from "@/lib/export/toPlainText";
 
-async function downloadFile(url: string, body: unknown, fallbackName: string) {
+async function downloadFile(url: string, body: unknown, fallbackName: string): Promise<{ pageCount: number | null }> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,6 +29,9 @@ async function downloadFile(url: string, body: unknown, fallbackName: string) {
   a.click();
   a.remove();
   URL.revokeObjectURL(objectUrl);
+
+  const pageCountHeader = res.headers.get("X-Resume-Page-Count");
+  return { pageCount: pageCountHeader ? Number(pageCountHeader) : null };
 }
 
 export function ExportToolbar({ data, template }: { data: ResumeData; template: ResumeTemplate }) {
@@ -38,7 +41,12 @@ export function ExportToolbar({ data, template }: { data: ResumeData; template: 
   async function handleExport(kind: "pdf" | "docx") {
     setLoading(kind);
     try {
-      await downloadFile(`/api/export/${kind}`, { resumeData: data, template }, `resume.${kind}`);
+      const { pageCount } = await downloadFile(`/api/export/${kind}`, { resumeData: data, template }, `resume.${kind}`);
+      if (kind === "pdf" && pageCount && pageCount > 1) {
+        toast.warning(
+          `This resume didn't fit on one page even at the smallest readable font (came out to ${pageCount} pages). Trim a bullet or two in the editor and re-download.`
+        );
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed.");
     } finally {
