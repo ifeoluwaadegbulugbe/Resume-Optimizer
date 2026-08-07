@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 export function WordCountBar({ count }: { count: number }) {
-  const min = 475;
+  const min = 450;
   const max = 600;
   const target = [525, 550];
   const inRange = count >= min && count <= max;

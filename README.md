@@ -98,7 +98,7 @@ Two more AI-backed actions, callable any time after the initial generation:
 
 ## Word count and page length
 
-The optimizer targets 475–600 words (525–550 preferred) — enforced via `validateResumeLocally` and shown live
+The optimizer targets 450–600 words (525–550 preferred) — enforced via `validateResumeLocally` and shown live
 in the editor. PDF export (`/api/export/pdf`) additionally renders at progressively smaller font/spacing
 densities (`DENSITY_TIERS` in `src/lib/export/pdfDocument.tsx`) until the result fits one page, verified by
 parsing the rendered PDF's actual page count — not just estimated from word count. If content is so long that

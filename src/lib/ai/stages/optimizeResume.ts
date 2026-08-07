@@ -76,7 +76,7 @@ Structure and prioritization:
   experience should be compressed to 2-3 bullets rather than consuming space.
 - Include projects only when they strengthen candidacy for this specific role.
 - The entire resume's total word count (summary + skills + experience + included projects + education +
-  certifications + awards/leadership/volunteer) must land between 475 and 600 words, targeting ~525-550.
+  certifications + awards/leadership/volunteer) must land between 450 and 600 words, targeting ~525-550.
   Do not pad with filler to hit the count, and do not cut real evidence just to go lower.
 - Preserve contact information exactly as given.`,
     prompt: `TARGET JOB

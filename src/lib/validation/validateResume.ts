@@ -9,11 +9,11 @@ export function validateResumeLocally(data: ResumeData): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
   const wordCount = countWords(data);
-  if (wordCount < 475) {
+  if (wordCount < 450) {
     issues.push({
       type: "word_count",
       severity: "warning",
-      message: `Resume is ${wordCount} words, below the 475-word minimum.`,
+      message: `Resume is ${wordCount} words, below the 450-word minimum.`,
       location: "overall",
     });
   } else if (wordCount > 600) {
