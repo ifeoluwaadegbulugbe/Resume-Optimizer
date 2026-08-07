@@ -7,7 +7,7 @@ PDF/DOCX export.
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript, Turbopack) + **Tailwind v4** + **shadcn/ui**
-- **Gemini API** (`gemini-2.5-flash`) for the AI pipeline, via structured JSON outputs
+- **Gemini API** (`gemini-flash-latest` alias — see note below) for the AI pipeline, via structured JSON outputs
 - **Supabase** (Postgres + Auth) — schema and RLS policies are ready in `supabase/migrations/`
 - `pdf-parse` / `mammoth` for resume file parsing, `@react-pdf/renderer` / `docx` for export
 
@@ -32,6 +32,14 @@ GEMINI_API_KEY=your-key-here
 
 Without this, resume parsing and the analyze/optimize pipeline will return a friendly "not configured" error
 instead of running.
+
+**Free-tier quota:** Google's free tier caps each model at a small number of requests/day (we've seen the
+limit hit at 20/day). A single optimization run can use ~6–14 Gemini calls (more when the score-gate loop
+below does multiple refinement passes), so a couple of runs can exhaust the daily quota. If you're testing
+heavily, either watch usage at https://ai.dev/rate-limit or move to a paid tier.
+`GEMINI_MODEL` in `src/lib/ai/gemini.ts` uses the `-latest` alias specifically so it keeps working as Google
+retires dated model versions (this already happened once to `gemini-2.5-flash` during development) — if
+generation ever starts failing with a model-not-found error, that alias is the first thing to check.
 
 ### 2. Supabase (optional — enables real accounts + cross-device sync)
 
@@ -58,37 +66,60 @@ to swap the data layer in `src/lib/data/store.ts` for real Postgres reads/writes
 
 ## How the AI pipeline works
 
-`src/lib/ai/pipeline.ts` runs 8 stages (each shown live in the analysis screen), calling Gemini with a strict
-JSON schema at each step so output is always structured and validated — never a single freeform prompt:
+`src/lib/ai/pipeline.ts` runs a multi-stage pipeline (each stage shown live in the analysis screen), calling
+Gemini with a strict JSON schema at each step so output is always structured and validated — never a single
+freeform prompt:
 
 1. Parse resume → structured `ResumeData`
 2. Analyze job description → requirements, keyword map (critical/high/medium/low), culture signals
 3. Requirement classification (part of stage 2's output)
 4. Score experience relevance + identify requirement gaps
-5. Optimize resume — XYZ-framework bullets, culture-fit evidence, word count target 525–550
-6. ATS scorer — keyword/requirement/skills/structure/semantic scoring + keyword coverage buckets
-7. Recruiter scorer — first-impression simulation, shortlist decision, before/after bullet comparisons
-8. Validation — local structural checks + an AI hallucination check comparing optimized vs. original; a
-   failed validation automatically re-runs the optimizer once before accepting the result
+5. **Score-gate optimization loop** (up to 3 passes): optimize → ATS score → recruiter score → validate.
+   If both ATS and recruiter aren't yet ≥90, the next pass is fed the specific weakest-scoring areas and
+   still-missing critical keywords and asked to revise (not restart) the draft. The loop stops early once
+   both hit 90, or once a pass stops meaningfully improving the combined score (plateau detection).
+6. Validation — local structural checks + an AI hallucination check comparing optimized vs. original.
 
 Every prompt includes an explicit truthfulness guardrail: no invented employers, titles, metrics,
 technologies, or certifications. Missing metrics become bracketed placeholders (`[X%]`), never fabricated
-numbers.
+numbers. **This holds even when 90+ isn't reachable truthfully** — instead of fabricating experience to hit
+the target, the UI shows a "Maximum Truthful Match" banner (`ScoreGateBanner`) that names exactly which
+requirements are capping the score and why, per `scoreGate.limitingFactors`.
+
+Two more AI-backed actions, callable any time after the initial generation:
+
+- **Chat** (`/api/optimize/chat`, `chatRefineResume`) — conversational resume edits grounded in the same
+  truthfulness rules; if you ask for something unverified it explains why it won't add it rather than adding
+  it. Chat edits don't auto-rescore (to save API calls) — the editor shows the last-known scores until you
+  click **Rescore**.
+- **Rescore** (`/api/optimize/rescore`) — re-runs just the ATS + recruiter scoring (not the full multi-pass
+  loop) against whatever the resume currently looks like, so edits made in the chat or the manual editor get
+  fresh numbers cheaply.
+
+## Word count and page length
+
+The optimizer targets 475–600 words (525–550 preferred) — enforced via `validateResumeLocally` and shown live
+in the editor. PDF export (`/api/export/pdf`) additionally renders at progressively smaller font/spacing
+densities (`DENSITY_TIERS` in `src/lib/export/pdfDocument.tsx`) until the result fits one page, verified by
+parsing the rendered PDF's actual page count — not just estimated from word count. If content is so long that
+even the smallest safe density still overflows, the export still succeeds but the UI shows a warning toast
+telling you to trim content, rather than silently shipping a multi-page file.
 
 ## Project layout
 
 ```
-src/lib/ai/            Gemini client, schemas, prompts, and the 8-stage pipeline
+src/lib/ai/            Gemini client, schemas, prompts, and the score-gate pipeline
 src/lib/parsing/        PDF/DOCX/TXT text extraction
 src/lib/validation/     Local (non-AI) structural resume validation
-src/lib/export/         PDF (react-pdf), DOCX (docx), and plain-text export
+src/lib/export/         PDF (react-pdf, 1-page shrink logic), DOCX (docx), and plain-text export
 src/lib/data/           Zustand + localStorage data layer (guest mode)
 src/lib/supabase/       Browser/server Supabase clients + auth middleware
 supabase/migrations/    SQL schema + RLS policies
-src/app/api/            parse-resume, analyze (streaming NDJSON), regenerate-bullet, export/pdf, export/docx
-src/app/(dashboard)/    dashboard, resumes, resumes/[versionId] (editor+scores), applications, settings
+src/app/api/            parse-resume, analyze (streaming NDJSON), optimize/chat, optimize/rescore,
+                        optimize/regenerate-bullet, export/pdf, export/docx
+src/app/(dashboard)/    dashboard, resumes, resumes/[versionId] (editor+scores+chat), applications, settings
 src/app/(auth)/         login, signup
-src/components/         upload, jd, analysis, scoring, editor, layout, auth
+src/components/         upload, jd, analysis, scoring, editor (incl. resume-chat), layout, auth
 ```
 
 ## Notes
