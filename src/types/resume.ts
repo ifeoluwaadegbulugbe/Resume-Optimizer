@@ -221,6 +221,13 @@ export interface ValidationIssue {
   location?: string;
 }
 
+export interface ScoreGateResult {
+  reached90: boolean;
+  iterations: number;
+  scoreHistory: { iteration: number; ats: number; recruiter: number }[];
+  limitingFactors: string[];
+}
+
 export interface OptimizedResume {
   id: string;
   resumeData: ResumeData;
@@ -238,6 +245,14 @@ export interface OptimizedResume {
   improvementSuggestions: ImprovementSuggestion[];
   validationIssues: ValidationIssue[];
   whatImproved: string[];
+  scoreGate: ScoreGateResult;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
 }
 
 export type ResumeTemplate = "classic" | "modern" | "minimal" | "professional" | "technical";

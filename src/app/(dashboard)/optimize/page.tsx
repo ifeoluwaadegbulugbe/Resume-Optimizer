@@ -61,6 +61,7 @@ export default function OptimizePage() {
       template: "classic",
       optimized: result.optimized,
       status: "draft",
+      chatMessages: [],
     });
 
     router.push(`/resumes/${version.id}`);

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
             jobDescription: body.jobDescription,
             template: body.template,
           },
-          (stage) => send({ type: "progress", stage })
+          (stage, iteration) => send({ type: "progress", stage, iteration })
         );
         send({ type: "done", optimized, jobAnalysis });
       } catch (err) {

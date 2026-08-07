@@ -18,12 +18,40 @@ export interface OptimizeOutput {
   improvementSuggestions: ImprovementSuggestion[];
 }
 
+export interface RefinementContext {
+  iteration: number;
+  previousDraft: ResumeData;
+  atsTotal: number;
+  recruiterTotal: number;
+  weakestAreas: string[]; // e.g. "ATS keyword match: 18/30 — ...", human-readable
+  missingCriticalKeywords: string[];
+}
+
 export async function optimizeResumeForJob(
   original: ResumeData,
   jd: JobDescriptionAnalysis,
-  relevance: RelevanceAnalysis
+  relevance: RelevanceAnalysis,
+  refinement?: RefinementContext
 ): Promise<OptimizeOutput> {
   const criticalKeywords = jd.keywordMap.filter((k) => k.priority === "critical" || k.priority === "high");
+
+  const refinementBlock = refinement
+    ? `
+THIS IS A REFINEMENT PASS (iteration ${refinement.iteration}) — the goal is >=90/100 on both ATS and recruiter
+scores, truthfully. The previous draft below scored ATS ${refinement.atsTotal}/100 and Recruiter
+${refinement.recruiterTotal}/100. Revise that draft (don't start over) to specifically address:
+
+${refinement.weakestAreas.map((a) => `- ${a}`).join("\n")}
+${
+  refinement.missingCriticalKeywords.length
+    ? `\nCritical/high-priority keywords still missing (add ONLY where truthfully supported by the original resume — never fabricate):\n${refinement.missingCriticalKeywords.map((k) => `- ${k}`).join("\n")}`
+    : ""
+}
+
+PREVIOUS DRAFT TO REVISE
+${JSON.stringify(refinement.previousDraft, null, 2)}
+`
+    : "";
 
   const raw = await generateStructured<OptimizeRawResult>({
     stage: "optimizing_achievements",
@@ -70,9 +98,9 @@ ${relevance.experienceRelevance
 REQUIREMENT GAPS (do not fabricate evidence for gaps with hasEvidence=false)
 ${relevance.requirementGaps.map((g) => `- ${g.requirement}: ${g.hasEvidence ? "evidenced" : "NOT evidenced"}`).join("\n")}
 
-CANDIDATE'S ORIGINAL RESUME (ground truth — do not introduce facts beyond this)
+CANDIDATE'S ORIGINAL RESUME (ground truth — do not introduce facts beyond this, even during refinement)
 ${JSON.stringify(original, null, 2)}
-
+${refinementBlock}
 Produce the optimized resumeData, a whatImproved list (short factual bullets like "23 relevant keywords added
 naturally", "7 bullets rewritten around achievements"), and a ranked improvementSuggestions list of further
 changes the candidate could make (e.g. adding a metric, adding evidence of a specific skill) — never promise a

@@ -9,39 +9,61 @@ const TEMPLATE_ACCENT: Record<ResumeTemplate, string> = {
   technical: "#0f172a",
 };
 
-function makeStyles(template: ResumeTemplate) {
+// Resumes must fit on a single page. Rather than guess a font size up front,
+// the export route renders at density=1 first and re-renders at
+// progressively tighter densities (see DENSITY_TIERS) only if the result
+// overflows to a second page — so most resumes keep full-size, readable
+// type, and only dense ones get compressed.
+function makeStyles(template: ResumeTemplate, density: number) {
   const accent = TEMPLATE_ACCENT[template];
+  const f = (n: number) => n * density;
   return StyleSheet.create({
-    page: { paddingVertical: 34, paddingHorizontal: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
-    name: { fontSize: 20, fontFamily: "Helvetica-Bold", marginBottom: 2, color: accent },
-    contactRow: { fontSize: 9, color: "#444444", marginBottom: 10 },
+    page: {
+      paddingVertical: f(34),
+      paddingHorizontal: f(40),
+      fontSize: f(10),
+      fontFamily: "Helvetica",
+      color: "#1a1a1a",
+    },
+    name: { fontSize: f(20), fontFamily: "Helvetica-Bold", marginBottom: f(2), color: accent },
+    contactRow: { fontSize: f(9), color: "#444444", marginBottom: f(10) },
     sectionTitle: {
-      fontSize: 10.5,
+      fontSize: f(10.5),
       fontFamily: "Helvetica-Bold",
       textTransform: "uppercase",
       letterSpacing: 0.6,
       color: accent,
       borderBottomWidth: 1,
       borderBottomColor: accent,
-      paddingBottom: 2,
-      marginTop: 12,
-      marginBottom: 6,
+      paddingBottom: f(2),
+      marginTop: f(12),
+      marginBottom: f(6),
     },
-    summary: { fontSize: 10, lineHeight: 1.4, marginBottom: 2 },
-    skillGroup: { flexDirection: "row", fontSize: 9.5, marginBottom: 2 },
-    skillLabel: { fontFamily: "Helvetica-Bold", marginRight: 4 },
-    entryHeader: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-    entryTitle: { fontSize: 10.5, fontFamily: "Helvetica-Bold" },
-    entrySub: { fontSize: 9.5, color: "#333333" },
-    entryDates: { fontSize: 9, color: "#555555" },
-    bulletRow: { flexDirection: "row", marginTop: 2, paddingLeft: 8 },
-    bulletDot: { width: 8, fontSize: 9.5 },
-    bulletText: { flex: 1, fontSize: 9.5, lineHeight: 1.35 },
+    summary: { fontSize: f(10), lineHeight: 1.4, marginBottom: f(2) },
+    skillGroup: { flexDirection: "row", fontSize: f(9.5), marginBottom: f(2) },
+    skillLabel: { fontFamily: "Helvetica-Bold", marginRight: f(4) },
+    entryHeader: { flexDirection: "row", justifyContent: "space-between", marginTop: f(6) },
+    entryTitle: { fontSize: f(10.5), fontFamily: "Helvetica-Bold" },
+    entrySub: { fontSize: f(9.5), color: "#333333" },
+    entryDates: { fontSize: f(9), color: "#555555" },
+    bulletRow: { flexDirection: "row", marginTop: f(2), paddingLeft: f(8) },
+    bulletDot: { width: f(8), fontSize: f(9.5) },
+    bulletText: { flex: 1, fontSize: f(9.5), lineHeight: 1.35 },
   });
 }
 
-export function ResumePdfDocument({ data, template }: { data: ResumeData; template: ResumeTemplate }) {
-  const s = makeStyles(template);
+export const DENSITY_TIERS = [1, 0.93, 0.86, 0.8, 0.74];
+
+export function ResumePdfDocument({
+  data,
+  template,
+  density = 1,
+}: {
+  data: ResumeData;
+  template: ResumeTemplate;
+  density?: number;
+}) {
+  const s = makeStyles(template, density);
   const contactParts = [
     data.contact.location,
     data.contact.phone,

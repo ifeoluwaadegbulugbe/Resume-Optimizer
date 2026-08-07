@@ -4,6 +4,7 @@ import type {
   OptimizedResume,
   ResumeTemplate,
   ApplicationRecord,
+  ChatMessage,
 } from "@/types/resume";
 
 export interface SavedResume {
@@ -39,6 +40,7 @@ export interface SavedResumeVersion {
   template: ResumeTemplate;
   optimized: OptimizedResume;
   status: "draft" | "final";
+  chatMessages: ChatMessage[];
   createdAt: string;
   updatedAt: string;
 }
