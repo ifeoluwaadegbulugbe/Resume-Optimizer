@@ -15,8 +15,14 @@ export function detectFileType(fileName: string, mimeType: string): SourceFileTy
 export async function extractTextFromFile(buffer: Buffer, type: SourceFileType): Promise<string> {
   switch (type) {
     case "pdf": {
-      const { PDFParse } = await import("pdf-parse");
-      const parser = new PDFParse({ data: buffer });
+      // CanvasFactory must be imported before/alongside PDFParse — without it,
+      // pdfjs-dist throws "DOMMatrix is not defined" in Node/serverless
+      // environments that don't have browser canvas globals.
+      const [{ CanvasFactory }, { PDFParse }] = await Promise.all([
+        import("pdf-parse/worker"),
+        import("pdf-parse"),
+      ]);
+      const parser = new PDFParse({ data: buffer, CanvasFactory });
       try {
         const result = await parser.getText();
         return result.text;
