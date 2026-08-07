@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-export const GEMINI_MODEL = "gemini-2.5-flash";
+// "-latest" alias so this keeps working as Google retires dated model
+// versions (gemini-2.5-flash was cut off for new API keys shortly after
+// launch — see the note in README about verifying with /api/debug-models
+// if generation ever starts failing with a 404 model error).
+export const GEMINI_MODEL = "gemini-flash-latest";
 
 let client: GoogleGenAI | null = null;
 
