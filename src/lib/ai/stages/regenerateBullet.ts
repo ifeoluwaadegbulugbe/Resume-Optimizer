@@ -1,6 +1,11 @@
 import { generateStructured } from "../gemini";
 import { S } from "../schemas";
-import { TRUTHFULNESS_GUARDRAIL, XYZ_FRAMEWORK_GUIDANCE } from "../prompts";
+import {
+  TRUTHFULNESS_GUARDRAIL,
+  XYZ_FRAMEWORK_GUIDANCE,
+  BULLET_CRAFT_GUIDANCE,
+  LANGUAGE_QUALITY_GUARDRAIL,
+} from "../prompts";
 import type { JobDescriptionAnalysis } from "@/types/resume";
 
 export interface BulletAlternative {
@@ -30,6 +35,11 @@ export async function regenerateBullet(opts: {
     stage: "regenerate_bullet",
     systemInstruction: `You rewrite a single resume bullet three different ways, all truthful and all grounded
 in the same underlying fact. ${TRUTHFULNESS_GUARDRAIL} ${XYZ_FRAMEWORK_GUIDANCE}
+
+${BULLET_CRAFT_GUIDANCE}
+
+${LANGUAGE_QUALITY_GUARDRAIL}
+
 Produce exactly 3 alternatives:
 1. focus="achievement" — leads with the outcome/result.
 2. focus="technical" — emphasizes the tools/technologies/methods used.

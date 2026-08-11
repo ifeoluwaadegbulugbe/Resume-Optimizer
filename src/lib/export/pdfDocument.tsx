@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
 import type { ResumeData, ResumeTemplate } from "@/types/resume";
+import { plainContactParts, contactLinks, joinTitled } from "./contactLine";
 
 const TEMPLATE_ACCENT: Record<ResumeTemplate, string> = {
   classic: "#111111",
@@ -64,20 +65,22 @@ export function ResumePdfDocument({
   density?: number;
 }) {
   const s = makeStyles(template, density);
-  const contactParts = [
-    data.contact.location,
-    data.contact.phone,
-    data.contact.email,
-    data.contact.linkedin,
-    data.contact.portfolio,
-    data.contact.github,
-  ].filter(Boolean);
+  const contactParts = plainContactParts(data.contact);
+  const links = contactLinks(data.contact);
 
   return (
     <Document title={`${data.contact.fullName} Resume`}>
       <Page size="LETTER" style={s.page}>
         <Text style={s.name}>{data.contact.fullName}</Text>
-        <Text style={s.contactRow}>{contactParts.join("  |  ")}</Text>
+        <Text style={s.contactRow}>
+          {contactParts.join("  |  ")}
+          {links.map((l, i) => (
+            <Text key={l.label}>
+              {i > 0 || contactParts.length > 0 ? "  |  " : ""}
+              <Link src={l.href}>{l.label}</Link>
+            </Text>
+          ))}
+        </Text>
 
         {data.summary && (
           <View>
@@ -104,9 +107,7 @@ export function ResumePdfDocument({
             {data.experience.map((e) => (
               <View key={e.id} wrap={false}>
                 <View style={s.entryHeader}>
-                  <Text style={s.entryTitle}>
-                    {e.title} — {e.company}
-                  </Text>
+                  <Text style={s.entryTitle}>{joinTitled(e.title, e.company)}</Text>
                   <Text style={s.entryDates}>
                     {e.startDate} – {e.endDate}
                   </Text>
@@ -153,7 +154,7 @@ export function ResumePdfDocument({
             {data.education.map((ed) => (
               <View key={ed.id} style={s.entryHeader}>
                 <Text style={s.entryTitle}>
-                  {ed.institution} — {ed.degree}
+                  {joinTitled(ed.institution, ed.degree)}
                   {ed.includeGpa && ed.gpa ? ` (GPA: ${ed.gpa})` : ""}
                 </Text>
                 <Text style={s.entryDates}>
@@ -169,7 +170,7 @@ export function ResumePdfDocument({
             <Text style={s.sectionTitle}>Certifications</Text>
             {data.certifications.map((c) => (
               <Text key={c.id} style={s.summary}>
-                {c.name} — {c.issuer} ({c.date})
+                {joinTitled(c.name, c.issuer)} ({c.date})
               </Text>
             ))}
           </View>

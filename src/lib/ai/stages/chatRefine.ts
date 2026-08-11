@@ -1,7 +1,7 @@
 import { generateStructured } from "../gemini";
 import { S, resumeDataSchema } from "../schemas";
 import { withIds, type RawResumeData } from "../normalize";
-import { TRUTHFULNESS_GUARDRAIL } from "../prompts";
+import { TRUTHFULNESS_GUARDRAIL, BULLET_CRAFT_GUIDANCE, LANGUAGE_QUALITY_GUARDRAIL } from "../prompts";
 import type { ResumeData, JobDescriptionAnalysis, ChatMessage } from "@/types/resume";
 
 const chatResultSchema = S.obj(
@@ -49,8 +49,14 @@ You may rewrite, reorganize, re-emphasize, tighten, or restructure any part of t
 as long as every claim remains traceable to their ORIGINAL resume provided below. If the user asks you to add a
 skill, technology, employer, metric, or achievement that is not supported by their original resume, do NOT add
 it — explain in your reply why you won't, and suggest a truthful alternative if one exists (e.g. emphasizing a
-related real skill instead). Keep the resume within 450-600 words after any edit. If the request is just a
-question and doesn't require an edit, set madeChanges to false and return resumeData unchanged.`,
+related real skill instead). Keep the resume within 450-600 words after any edit.
+
+${BULLET_CRAFT_GUIDANCE}
+
+${LANGUAGE_QUALITY_GUARDRAIL}
+
+If the request is just a question and doesn't require an edit, set madeChanges to false and return resumeData
+unchanged.`,
     prompt: `TARGET JOB: ${opts.jd.jobTitle} at ${opts.jd.companyName}
 
 CANDIDATE'S ORIGINAL RESUME (ground truth — never introduce facts beyond this)

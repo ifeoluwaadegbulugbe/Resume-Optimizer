@@ -10,7 +10,7 @@ export async function parseResumeText(rawText: string): Promise<ResumeData> {
   }>({
     stage: "parsing_resume",
     systemInstruction:
-      "You are a precise resume parser. Extract structured information from the raw resume text exactly as written, without adding, inferring, or embellishing anything. If a field is not present, use an empty string or empty array. Preserve the original wording of bullets — do not rewrite them at this stage.",
+      "You are a precise resume parser. Extract structured information from the raw resume text exactly as written, without adding, inferring, or embellishing anything. If a field is not present, use an empty string or empty array. Preserve the original wording of bullets — do not rewrite them at this stage. Do not extract an 'Objective' statement into the summary field, and do not extract a 'References available upon request' line anywhere — these are outdated conventions the rest of the pipeline should never see.",
     prompt: `Extract structured resume data from the following raw resume text.\n\n---\n${rawText}\n---`,
     schema: resumeDataSchema,
     temperature: 0.1,

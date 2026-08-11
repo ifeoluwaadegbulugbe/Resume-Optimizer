@@ -3,7 +3,15 @@ import { optimizeResultSchema } from "../schemas";
 import { withIds, type RawResumeData } from "../normalize";
 import type { ResumeData, JobDescriptionAnalysis, ImprovementSuggestion } from "@/types/resume";
 import type { RelevanceAnalysis } from "./scoreRelevance";
-import { TRUTHFULNESS_GUARDRAIL, XYZ_FRAMEWORK_GUIDANCE, KEYWORD_GUIDANCE } from "../prompts";
+import {
+  TRUTHFULNESS_GUARDRAIL,
+  XYZ_FRAMEWORK_GUIDANCE,
+  KEYWORD_GUIDANCE,
+  BULLET_CRAFT_GUIDANCE,
+  LANGUAGE_QUALITY_GUARDRAIL,
+  SUMMARY_STRUCTURE_GUIDANCE,
+  EXCLUSIONS_GUIDANCE,
+} from "../prompts";
 import { randomUUID } from "crypto";
 
 interface OptimizeRawResult {
@@ -60,20 +68,31 @@ recruiter-compelling resume. ${TRUTHFULNESS_GUARDRAIL}
 
 ${XYZ_FRAMEWORK_GUIDANCE}
 
+${BULLET_CRAFT_GUIDANCE}
+
 ${KEYWORD_GUIDANCE}
+
+${SUMMARY_STRUCTURE_GUIDANCE}
+
+${LANGUAGE_QUALITY_GUARDRAIL}
+
+${EXCLUSIONS_GUIDANCE}
 
 Culture-fit optimization: the job's inferred culture signals should be demonstrated through evidence already
 present in the candidate's real experience (ownership, collaboration, customer focus, etc.) — never state
 "excellent culture fit" directly.
 
 Structure and prioritization:
-- The professional summary must be 2-4 lines, job-specific, evidence-based, and avoid generic filler
-  ("hardworking professional seeking...").
 - Group skills intelligently (e.g. Languages, Frameworks, Tools) and prioritize skills that appear in the job
   description, but only include skills the candidate actually has.
 - Order experience reverse-chronologically. The most relevant experience (per the relevance scores provided)
-  should get the strongest, most detailed bullets (up to 5) and highest keyword coverage; less relevant
-  experience should be compressed to 2-3 bullets rather than consuming space.
+  should get the strongest, most detailed bullets and highest keyword coverage; less relevant experience
+  should be compressed rather than consuming space (see bullet-count caps above).
+- Normalize every date to "MMM YYYY" (e.g. "Jan 2022") consistently across the whole resume, using "Present"
+  for the current role — never change the actual truthful year or month, only the display format.
+- If the job description explicitly asks candidates to state availability, start date, or graduation date,
+  and the candidate's original resume contains that information, state it plainly in one explicit line near
+  the top (e.g. end of the summary) rather than leaving a recruiter to infer it from an education date.
 - Include projects only when they strengthen candidacy for this specific role.
 - The entire resume's total word count (summary + skills + experience + included projects + education +
   certifications + awards/leadership/volunteer) must land between 450 and 600 words, targeting ~525-550.

@@ -1,15 +1,9 @@
 import type { ResumeData } from "@/types/resume";
+import { formatContactParts, joinTitled } from "./contactLine";
 
 export function resumeToPlainText(data: ResumeData): string {
   const lines: string[] = [];
-  const contactParts = [
-    data.contact.location,
-    data.contact.phone,
-    data.contact.email,
-    data.contact.linkedin,
-    data.contact.portfolio,
-    data.contact.github,
-  ].filter(Boolean);
+  const contactParts = formatContactParts(data.contact);
 
   lines.push(data.contact.fullName);
   lines.push(contactParts.join(" | "));
@@ -30,7 +24,7 @@ export function resumeToPlainText(data: ResumeData): string {
   if (data.experience.length) {
     lines.push("PROFESSIONAL EXPERIENCE");
     for (const e of data.experience) {
-      lines.push(`${e.title} — ${e.company} (${e.location})`);
+      lines.push(`${joinTitled(e.title, e.company)} (${e.location})`);
       lines.push(`${e.startDate} – ${e.endDate}`);
       for (const b of e.bullets) lines.push(`• ${b.text}`);
       lines.push("");
@@ -51,7 +45,7 @@ export function resumeToPlainText(data: ResumeData): string {
   if (data.education.length) {
     lines.push("EDUCATION");
     for (const ed of data.education) {
-      lines.push(`${ed.institution} — ${ed.degree}${ed.includeGpa && ed.gpa ? ` (GPA: ${ed.gpa})` : ""}`);
+      lines.push(`${joinTitled(ed.institution, ed.degree)}${ed.includeGpa && ed.gpa ? ` (GPA: ${ed.gpa})` : ""}`);
       lines.push(`${ed.startDate} – ${ed.endDate}`);
     }
     lines.push("");
@@ -59,7 +53,7 @@ export function resumeToPlainText(data: ResumeData): string {
 
   if (data.certifications.length) {
     lines.push("CERTIFICATIONS");
-    for (const c of data.certifications) lines.push(`${c.name} — ${c.issuer} (${c.date})`);
+    for (const c of data.certifications) lines.push(`${joinTitled(c.name, c.issuer)} (${c.date})`);
     lines.push("");
   }
 

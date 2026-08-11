@@ -9,6 +9,7 @@ import {
   BorderStyle,
 } from "docx";
 import type { ResumeData } from "@/types/resume";
+import { plainContactParts, contactLinks, joinTitled } from "./contactLine";
 
 const ACCENT = "C2185B";
 
@@ -26,14 +27,19 @@ function bulletParagraph(text: string) {
 }
 
 export async function buildResumeDocx(data: ResumeData): Promise<Buffer> {
-  const contactParts = [
-    data.contact.location,
-    data.contact.phone,
-    data.contact.email,
-    data.contact.linkedin,
-    data.contact.portfolio,
-    data.contact.github,
-  ].filter(Boolean);
+  const contactParts = plainContactParts(data.contact);
+  const links = contactLinks(data.contact);
+
+  const contactLineChildren = [
+    new TextRun({ text: contactParts.join("  |  "), size: 18, color: "444444" }),
+    ...links.flatMap((l, i) => [
+      new TextRun({ text: i > 0 || contactParts.length > 0 ? "  |  " : "", size: 18, color: "444444" }),
+      new ExternalHyperlink({
+        link: l.href,
+        children: [new TextRun({ text: l.label, style: "Hyperlink", size: 18 })],
+      }),
+    ]),
+  ];
 
   const children: Paragraph[] = [
     new Paragraph({
@@ -42,7 +48,7 @@ export async function buildResumeDocx(data: ResumeData): Promise<Buffer> {
     }),
     new Paragraph({
       spacing: { after: 160 },
-      children: [new TextRun({ text: contactParts.join("  |  "), size: 18, color: "444444" })],
+      children: contactLineChildren,
     }),
   ];
 
@@ -74,7 +80,7 @@ export async function buildResumeDocx(data: ResumeData): Promise<Buffer> {
           spacing: { before: 100 },
           tabStops: [{ type: "right", position: 9350 }],
           children: [
-            new TextRun({ text: `${e.title} — ${e.company}`, bold: true, size: 20 }),
+            new TextRun({ text: joinTitled(e.title, e.company), bold: true, size: 20 }),
             new TextRun({ text: `\t${e.startDate} – ${e.endDate}`, size: 18, color: "555555" }),
           ],
         })
@@ -129,7 +135,7 @@ export async function buildResumeDocx(data: ResumeData): Promise<Buffer> {
           tabStops: [{ type: "right", position: 9350 }],
           children: [
             new TextRun({
-              text: `${ed.institution} — ${ed.degree}${ed.includeGpa && ed.gpa ? ` (GPA: ${ed.gpa})` : ""}`,
+              text: `${joinTitled(ed.institution, ed.degree)}${ed.includeGpa && ed.gpa ? ` (GPA: ${ed.gpa})` : ""}`,
               bold: true,
               size: 20,
             }),
@@ -144,7 +150,7 @@ export async function buildResumeDocx(data: ResumeData): Promise<Buffer> {
     children.push(sectionHeading("Certifications"));
     for (const c of data.certifications) {
       children.push(
-        new Paragraph({ children: [new TextRun({ text: `${c.name} — ${c.issuer} (${c.date})`, size: 19 })] })
+        new Paragraph({ children: [new TextRun({ text: `${joinTitled(c.name, c.issuer)} (${c.date})`, size: 19 })] })
       );
     }
   }
