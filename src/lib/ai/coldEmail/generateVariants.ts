@@ -8,6 +8,9 @@ import {
   LENGTH_GUIDANCE,
   SUBJECT_LINE_GUIDANCE,
   COLD_EMAIL_LANGUAGE_GUARDRAIL,
+  ARTIFACT_LED_GUIDANCE,
+  STORY_LED_GUIDANCE,
+  OBJECTION_HONESTY_GUIDANCE,
 } from "./prompts";
 import type { ColdEmailInput, EmailStrategy, SubjectLineScore } from "@/types/coldEmail";
 import { randomUUID } from "crypto";
@@ -48,6 +51,9 @@ ${input.mutualConnection ? `MUTUAL CONNECTION: ${input.mutualConnection}` : ""}
 ${input.previousInteraction ? `PREVIOUS INTERACTION: ${input.previousInteraction}` : ""}
 ${input.jobPosting ? `JOB POSTING EXCERPT:\n${input.jobPosting}` : ""}
 ${input.specificReason ? `SPECIFIC REASON FOR CONTACTING NOW: ${input.specificReason}` : ""}
+${input.offerAlreadyPrepared ? "\nNOTE: the offer above is something the sender has ALREADY completed, not a future proposal — write it in completed past tense." : ""}
+${input.personalStory ? `\nPERSONAL STORY (only for a story_led variant, use verbatim facts only, never embellish): ${input.personalStory}` : ""}
+${input.senderCredentialLine ? `\nSENDER CREDENTIALS/SIGNATURE LINE (may append under sign-off if it strengthens a variant): ${input.senderCredentialLine}` : ""}
 
 APPROVED PERSONALIZATION SIGNALS (only these may be used — never use an unapproved or unlisted signal)
 ${approvedSignals.length ? approvedSignals.map((s) => `- ${s.text} (source: ${s.source})`).join("\n") : "(none approved)"}
@@ -59,7 +65,18 @@ PERSONALIZATION DEPTH: ${input.personalizationDepth} (light = 1 detail, standard
 
 export async function generateColdEmailVariants(input: ColdEmailInput): Promise<GenerateVariantsResult> {
   const depthCount = input.personalizationDepth === "light" ? 3 : input.personalizationDepth === "deep" ? 5 : 4;
-  const strategies: EmailStrategy[] = ["insight_led", "give_first", "social_proof_led"];
+
+  // story_led is only worth generating when there's a real personal story to
+  // tell — otherwise it would just produce a generic bio, which defeats the
+  // point. It replaces social_proof_led (the weaker third slot in practice)
+  // for the purposes where a mission-driven narrative tends to land: job
+  // hunting, networking, introductions.
+  const wantsStoryLed =
+    Boolean(input.personalStory?.trim()) &&
+    (input.purpose === "job_opportunity" || input.purpose === "networking" || input.purpose === "introduction");
+  const strategies: EmailStrategy[] = wantsStoryLed
+    ? ["insight_led", "give_first", "story_led"]
+    : ["insight_led", "give_first", "social_proof_led"];
 
   const raw = await generateStructured<GenerateVariantsResult>({
     stage: "generating_variants",
@@ -75,6 +92,12 @@ input. If sufficient, generate exactly 3 variants, one for each of these strateg
 ${PERSONALIZATION_QUALITY_GUIDANCE}
 
 ${STRUCTURE_GUIDANCE}
+
+${OBJECTION_HONESTY_GUIDANCE}
+
+${ARTIFACT_LED_GUIDANCE}
+
+${strategies.includes("story_led") ? STORY_LED_GUIDANCE : ""}
 
 ${CTA_GUIDANCE}
 

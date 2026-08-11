@@ -6,6 +6,7 @@ import type {
   ColdEmailPipelineStage,
   DetectedProblem,
   ColdEmailScoreBreakdown,
+  EmailStrategy,
 } from "@/types/coldEmail";
 import { generateColdEmailVariants, type RawVariant } from "./coldEmail/generateVariants";
 import { scoreColdEmailVariants, type ScoredVariantRaw } from "./coldEmail/scoreVariants";
@@ -15,9 +16,14 @@ import { validateColdEmailBody, validateSubjectLine } from "@/lib/validation/val
 const SCORE_TARGET = 90;
 const MAX_ITERATIONS = 2;
 
-function localIssuesAsProblems(body: string, subjectLines: RawVariant["subjectLines"]): DetectedProblem[] {
+function localIssuesAsProblems(
+  body: string,
+  subjectLines: RawVariant["subjectLines"],
+  strategy: EmailStrategy,
+  offerAlreadyPrepared: boolean
+): DetectedProblem[] {
   const problems: DetectedProblem[] = [];
-  for (const issue of validateColdEmailBody(body)) {
+  for (const issue of validateColdEmailBody(body, { strategy, offerAlreadyPrepared })) {
     problems.push({ issue: "Formatting", detail: issue.message, recommendation: "Rewrite to fix this." });
   }
   for (const s of subjectLines) {
@@ -46,8 +52,11 @@ function weakAreas(breakdown: ColdEmailScoreBreakdown): string[] {
     .map((r) => `${r.label}: ${r.score}/${r.max} — ${r.explanation}`);
 }
 
-function buildVariant(raw: RawVariant, scored: ScoredVariantRaw): ColdEmailVariant {
-  const problems = [...scored.problems, ...localIssuesAsProblems(raw.body, raw.subjectLines)];
+function buildVariant(raw: RawVariant, scored: ScoredVariantRaw, offerAlreadyPrepared: boolean): ColdEmailVariant {
+  const problems = [
+    ...scored.problems,
+    ...localIssuesAsProblems(raw.body, raw.subjectLines, raw.strategy, offerAlreadyPrepared),
+  ];
   return {
     id: randomUUID(),
     strategy: raw.strategy,
@@ -84,7 +93,9 @@ export async function runColdEmailPipeline(
   onProgress("scoring_variants");
   let rawVariants = generated.variants;
   let scored = await scoreColdEmailVariants(input, rawVariants);
-  let variants = rawVariants.map((v) => buildVariant(v, scored.find((s) => s.strategy === v.strategy)!));
+  let variants = rawVariants.map((v) =>
+    buildVariant(v, scored.find((s) => s.strategy === v.strategy)!, input.offerAlreadyPrepared)
+  );
 
   const scoreHistory: { iteration: number; bestScore: number }[] = [];
   let iterations = 1;
@@ -118,7 +129,9 @@ export async function runColdEmailPipeline(
 
     onProgress("scoring_variants", iterations);
     scored = await scoreColdEmailVariants(input, rawVariants);
-    variants = rawVariants.map((v) => buildVariant(v, scored.find((s) => s.strategy === v.strategy)!));
+    variants = rawVariants.map((v) =>
+      buildVariant(v, scored.find((s) => s.strategy === v.strategy)!, input.offerAlreadyPrepared)
+    );
 
     scoreHistory.push({ iteration: iterations, bestScore: Math.max(...variants.map((v) => v.score.total)) });
   }

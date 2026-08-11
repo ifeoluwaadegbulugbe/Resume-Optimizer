@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -67,6 +68,9 @@ const DEFAULT_INPUT: ColdEmailInput = {
   signals: [],
   tone: "direct",
   personalizationDepth: "standard",
+  offerAlreadyPrepared: false,
+  personalStory: "",
+  senderCredentialLine: "",
 };
 
 export function ColdEmailIntakeForm({ onSubmit }: { onSubmit: (input: ColdEmailInput) => void }) {
@@ -155,9 +159,17 @@ export function ColdEmailIntakeForm({ onSubmit }: { onSubmit: (input: ColdEmailI
             <Label>Your role</Label>
             <Input value={form.senderRole} onChange={(e) => patch({ senderRole: e.target.value })} />
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
+          <div className="space-y-1.5">
             <Label>Your company (optional)</Label>
             <Input value={form.senderCompany} onChange={(e) => patch({ senderCompany: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Credentials / signature line (optional)</Label>
+            <Input
+              placeholder="e.g. Senior ESG Analyst at Skalable | LinkedIn"
+              value={form.senderCredentialLine}
+              onChange={(e) => patch({ senderCredentialLine: e.target.value })}
+            />
           </div>
         </CardContent>
       </Card>
@@ -199,6 +211,20 @@ export function ColdEmailIntakeForm({ onSubmit }: { onSubmit: (input: ColdEmailI
               value={form.whatSenderOffers}
               onChange={(e) => patch({ whatSenderOffers: e.target.value })}
             />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox
+                checked={form.offerAlreadyPrepared}
+                onCheckedChange={(v) => patch({ offerAlreadyPrepared: Boolean(v) })}
+              />
+              I&apos;ve already prepared this — not just proposing it
+            </label>
+            {form.offerAlreadyPrepared && (
+              <p className="text-xs text-muted-foreground">
+                The strongest cold emails we&apos;ve seen lead with completed work (&quot;I built a dashboard
+                using your data...&quot;) rather than an offer to build one — this tells the writer to phrase it
+                that way.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Relevant proof (a real number, named client, or specific result)</Label>
@@ -231,6 +257,15 @@ export function ColdEmailIntakeForm({ onSubmit }: { onSubmit: (input: ColdEmailI
           <div className="space-y-1.5">
             <Label>Specific reason for reaching out now (optional)</Label>
             <Input value={form.specificReason} onChange={(e) => patch({ specificReason: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>A real personal story connecting you to this, if there is one (optional)</Label>
+            <Textarea
+              rows={3}
+              placeholder="A genuine, specific experience that explains why this matters to you — the highest-performing example we studied was a job-seeker email built entirely around one true story."
+              value={form.personalStory}
+              onChange={(e) => patch({ personalStory: e.target.value })}
+            />
           </div>
         </CardContent>
       </Card>

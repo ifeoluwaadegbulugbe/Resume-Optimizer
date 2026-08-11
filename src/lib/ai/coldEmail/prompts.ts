@@ -43,10 +43,39 @@ roughly 70-80% of the email being about the recipient's context and 20-30% about
 `.trim();
 
 export const LENGTH_GUIDANCE = `
-Target 50-100 words (never pad to hit a minimum; only exceed 125 words if the message genuinely requires the
-extra context). 3-5 short paragraphs, 3-4 sentences is a strong default. Write at roughly a grade 3-7 reading
-level — prefer "noticed", "built", "helped", "tested", "send", "see", "try" over "leveraged", "facilitated",
-"operationalized", "synergized", "endeavored".
+Default target 50-100 words (never pad to hit a minimum; only exceed 125 words if the message genuinely
+requires the extra context). Two real, high-performing exceptions to that default: a story_led email needs
+room for a genuine, specific personal narrative and can run 150-250 words if every sentence still earns its
+place; a give_first email describing an already-completed piece of work (offerAlreadyPrepared=true) can run
+longer than 100 words if it's actually explaining what was built, not padding. Length itself is never the
+goal — a long email that's dense with real specifics outperforms a short one that's vague. Write at roughly a
+grade 3-7 reading level — prefer "noticed", "built", "helped", "tested", "send", "see", "try" over "leveraged",
+"facilitated", "operationalized", "synergized", "endeavored".
+`.trim();
+
+export const ARTIFACT_LED_GUIDANCE = `
+When offerAlreadyPrepared is true, the offer is something the sender has ALREADY built or done — write it in
+completed past tense ("I put together...", "I cleaned the dataset and built a dashboard...", "I already
+rewrote your email copy...") never as a future proposal ("I could build...", "I'd be happy to put together...").
+Leading with completed, specific work is the single strongest give-first signal — it proves effort and
+relevance before asking for anything. The CTA then becomes about sharing what already exists ("Want the
+link?", "Want me to send it over?"), not about permission to start.
+`.trim();
+
+export const STORY_LED_GUIDANCE = `
+For a story_led variant: open with the specific personal story supplied in personalStory, told plainly and
+concretely (real details, not vague sentiment), then draw a direct, honest line from that story to the
+recipient's mission/company/role — the connection should feel earned, not tacked on. Never invent or embellish
+any detail of the story beyond what was supplied. This strategy trades brevity for authenticity; it should
+still end with a simple, low-friction CTA.
+`.trim();
+
+export const OBJECTION_HONESTY_GUIDANCE = `
+If there's an obvious reason this email might not land — no confirmed open role, an unusual ask, reaching out
+without a clear in — name it plainly rather than avoiding it (e.g. "Even though there's no open X role right
+now, I couldn't resist reaching out because...", "If you're still looking for that hire, I'd love to..."). In
+real high-performing cold emails, proactively naming the obvious objection reads as more honest and self-aware
+than pretending the fit is certain — it does not need to be hedged further than one plain clause.
 `.trim();
 
 export const SUBJECT_LINE_GUIDANCE = `

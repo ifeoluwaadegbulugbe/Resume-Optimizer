@@ -7,6 +7,9 @@ import {
   LENGTH_GUIDANCE,
   SUBJECT_LINE_GUIDANCE,
   COLD_EMAIL_LANGUAGE_GUARDRAIL,
+  ARTIFACT_LED_GUIDANCE,
+  STORY_LED_GUIDANCE,
+  OBJECTION_HONESTY_GUIDANCE,
 } from "./prompts";
 import type { ColdEmailInput, DetectedProblem, SubjectLineScore } from "@/types/coldEmail";
 import type { RawVariant } from "./generateVariants";
@@ -29,6 +32,12 @@ export async function refineColdEmailVariant(opts: {
 without changing its core strategy (${opts.variant.strategy}). ${COLD_EMAIL_TRUTHFULNESS_GUARDRAIL}
 
 ${STRUCTURE_GUIDANCE}
+
+${OBJECTION_HONESTY_GUIDANCE}
+
+${opts.input.offerAlreadyPrepared ? ARTIFACT_LED_GUIDANCE : ""}
+
+${opts.variant.strategy === "story_led" ? STORY_LED_GUIDANCE : ""}
 
 ${CTA_GUIDANCE}
 
@@ -56,7 +65,10 @@ Relevant proof: ${opts.input.relevantProof || "(none supplied)"}
 Approved signals: ${opts.input.signals
       .filter((s) => s.approved)
       .map((s) => s.text)
-      .join("; ") || "(none)"}`,
+      .join("; ") || "(none)"}
+${opts.input.offerAlreadyPrepared ? "The offer is already completed work — keep it in completed past tense." : ""}
+${opts.input.personalStory ? `Personal story (verbatim facts only): ${opts.input.personalStory}` : ""}
+${opts.input.senderCredentialLine ? `Sender credentials/signature line: ${opts.input.senderCredentialLine}` : ""}`,
     schema: refineVariantSchema,
     temperature: 0.5,
   });

@@ -1,4 +1,4 @@
-import type { SubjectLineScore } from "@/types/coldEmail";
+import type { EmailStrategy, SubjectLineScore } from "@/types/coldEmail";
 
 export interface ColdEmailLocalIssue {
   severity: "error" | "warning";
@@ -39,19 +39,33 @@ const AI_SOUNDING_PHRASES = [
   "leveraging cutting-edge",
 ];
 
-export function validateColdEmailBody(body: string): ColdEmailLocalIssue[] {
+/** Real high-performing examples show story-led narratives and "here's what
+ * I already built" give-first emails legitimately run much longer than a
+ * typical cold email — so the acceptable range is strategy-aware rather
+ * than one fixed ceiling. */
+function lengthRangeFor(strategy: EmailStrategy | undefined, offerAlreadyPrepared: boolean | undefined) {
+  if (strategy === "story_led") return { min: 50, target: 250, ceiling: 300 };
+  if (strategy === "give_first" && offerAlreadyPrepared) return { min: 50, target: 180, ceiling: 220 };
+  return { min: 50, target: 100, ceiling: 125 };
+}
+
+export function validateColdEmailBody(
+  body: string,
+  opts?: { strategy?: EmailStrategy; offerAlreadyPrepared?: boolean }
+): ColdEmailLocalIssue[] {
   const issues: ColdEmailLocalIssue[] = [];
   const wordCount = body.trim().split(/\s+/).filter(Boolean).length;
+  const { min, target, ceiling } = lengthRangeFor(opts?.strategy, opts?.offerAlreadyPrepared);
 
-  if (wordCount > 125) {
-    issues.push({ severity: "warning", message: `Body is ${wordCount} words — over the 125-word ceiling.` });
-  } else if (wordCount > 100) {
+  if (wordCount > ceiling) {
+    issues.push({ severity: "warning", message: `Body is ${wordCount} words — over the ${ceiling}-word ceiling.` });
+  } else if (wordCount > target) {
     issues.push({
       severity: "warning",
-      message: `Body is ${wordCount} words — above the 50-100 target range (still under the 125 ceiling).`,
+      message: `Body is ${wordCount} words — above the ${min}-${target} target range (still under the ${ceiling} ceiling).`,
     });
-  } else if (wordCount < 50) {
-    issues.push({ severity: "warning", message: `Body is ${wordCount} words — under the 50-word target.` });
+  } else if (wordCount < min) {
+    issues.push({ severity: "warning", message: `Body is ${wordCount} words — under the ${min}-word target.` });
   }
 
   if (body.includes("—")) {
@@ -75,7 +89,9 @@ export function validateColdEmailBody(body: string): ColdEmailLocalIssue[] {
     }
   }
 
-  const allCapsWords = body.match(/\b[A-Z]{4,}\b/g) ?? [];
+  // 5+ letters so legitimate short acronyms (UNDP, NASA, SEO, ATS, ESG, ROI)
+  // don't get flagged as "shouting" — real shout-words tend to be longer.
+  const allCapsWords = body.match(/\b[A-Z]{5,}\b/g) ?? [];
   if (allCapsWords.length > 0) {
     issues.push({ severity: "warning", message: `Contains shouty all-caps text: ${allCapsWords.join(", ")}.` });
   }

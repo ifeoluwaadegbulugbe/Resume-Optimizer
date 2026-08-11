@@ -1,5 +1,14 @@
 import { S } from "./schemas";
 
+export const EMAIL_STRATEGY_VALUES = [
+  "insight_led",
+  "give_first",
+  "problem_led",
+  "social_proof_led",
+  "connection_led",
+  "story_led",
+] as const;
+
 export const subjectLineSchema = S.obj(
   { text: S.str(), score: S.int("0-100"), reasoning: S.str() },
   ["text", "score", "reasoning"]
@@ -42,7 +51,7 @@ export const detectedProblemSchema = S.obj(
 
 export const variantSchema = S.obj(
   {
-    strategy: S.enum(["insight_led", "give_first", "problem_led", "social_proof_led", "connection_led"]),
+    strategy: S.enum([...EMAIL_STRATEGY_VALUES]),
     subjectLines: S.arr(subjectLineSchema),
     body: S.str(),
   },
@@ -67,7 +76,7 @@ export const scoreAllResultSchema = S.obj(
     results: S.arr(
       S.obj(
         {
-          strategy: S.enum(["insight_led", "give_first", "problem_led", "social_proof_led", "connection_led"]),
+          strategy: S.enum([...EMAIL_STRATEGY_VALUES]),
           breakdown: coldEmailScoreSchema,
           problems: S.arr(detectedProblemSchema),
         },

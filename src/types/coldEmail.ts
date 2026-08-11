@@ -48,9 +48,29 @@ export interface ColdEmailInput {
   signals: PersonalizationSignal[];
   tone: OutreachTone;
   personalizationDepth: "light" | "standard" | "deep";
+  // The two highest-performing patterns in real cold emails we studied:
+  // (1) the offer described in whatSenderOffers is something the sender has
+  // ALREADY built/done, not just proposed — the email should say "I built X"
+  // rather than "I could build X", which is a much stronger give-first
+  // signal, but only when the user confirms it's actually true.
+  offerAlreadyPrepared: boolean;
+  // (2) a genuine personal story connecting the sender's real background to
+  // why this specific mission/role matters to them — only used verbatim from
+  // what the user supplies, never invented.
+  personalStory?: string;
+  // Optional credentials/signature line to consider appending under the
+  // sign-off (e.g. "Senior Analyst at Acme | LinkedIn | Portfolio") — used
+  // only when it plausibly strengthens the specific variant.
+  senderCredentialLine?: string;
 }
 
-export type EmailStrategy = "insight_led" | "give_first" | "problem_led" | "social_proof_led" | "connection_led";
+export type EmailStrategy =
+  | "insight_led"
+  | "give_first"
+  | "problem_led"
+  | "social_proof_led"
+  | "connection_led"
+  | "story_led";
 
 export const STRATEGY_LABELS: Record<EmailStrategy, string> = {
   insight_led: "Insight-led",
@@ -58,6 +78,7 @@ export const STRATEGY_LABELS: Record<EmailStrategy, string> = {
   problem_led: "Problem-led",
   social_proof_led: "Social-proof-led",
   connection_led: "Connection-led",
+  story_led: "Story-led",
 };
 
 export interface SubjectLineScore {
