@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { randomUUID } from "@/lib/utils/uuid";
-import type { SavedResume, SavedJobDescription, SavedResumeVersion, SavedApplication } from "./types";
+import type { SavedResume, SavedJobDescription, SavedResumeVersion, SavedApplication, SavedColdEmail } from "./types";
 import type { ApplicationStatus } from "@/types/resume";
+import type { FollowUpMessage } from "@/types/coldEmail";
 
 // This is the app's data layer. It persists to localStorage so the full
 // product (dashboard, versioning, tracker) is usable immediately in "guest
@@ -15,6 +16,7 @@ interface DataState {
   jobDescriptions: SavedJobDescription[];
   resumeVersions: SavedResumeVersion[];
   applications: SavedApplication[];
+  coldEmails: SavedColdEmail[];
 
   addResume: (r: Omit<SavedResume, "id" | "createdAt" | "updatedAt">) => SavedResume;
   updateResume: (id: string, patch: Partial<SavedResume>) => void;
@@ -32,6 +34,11 @@ interface DataState {
   updateApplication: (id: string, patch: Partial<SavedApplication>) => void;
   setApplicationStatus: (id: string, status: ApplicationStatus) => void;
   deleteApplication: (id: string) => void;
+
+  addColdEmail: (c: Omit<SavedColdEmail, "id" | "createdAt" | "updatedAt">) => SavedColdEmail;
+  updateColdEmail: (id: string, patch: Partial<SavedColdEmail>) => void;
+  deleteColdEmail: (id: string) => void;
+  addFollowUpToColdEmail: (id: string, followUp: FollowUpMessage) => void;
 }
 
 export const useDataStore = create<DataState>()(
@@ -41,6 +48,7 @@ export const useDataStore = create<DataState>()(
       jobDescriptions: [],
       resumeVersions: [],
       applications: [],
+      coldEmails: [],
 
       addResume: (r) => {
         const now = new Date().toISOString();
@@ -114,6 +122,28 @@ export const useDataStore = create<DataState>()(
         })),
       setApplicationStatus: (id, status) => get().updateApplication(id, { status }),
       deleteApplication: (id) => set((s) => ({ applications: s.applications.filter((a) => a.id !== id) })),
+
+      addColdEmail: (c) => {
+        const now = new Date().toISOString();
+        const record: SavedColdEmail = { ...c, id: randomUUID(), createdAt: now, updatedAt: now };
+        set((s) => ({ coldEmails: [...s.coldEmails, record] }));
+        return record;
+      },
+      updateColdEmail: (id, patch) =>
+        set((s) => ({
+          coldEmails: s.coldEmails.map((c) =>
+            c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c
+          ),
+        })),
+      deleteColdEmail: (id) => set((s) => ({ coldEmails: s.coldEmails.filter((c) => c.id !== id) })),
+      addFollowUpToColdEmail: (id, followUp) =>
+        set((s) => ({
+          coldEmails: s.coldEmails.map((c) =>
+            c.id === id
+              ? { ...c, followUps: [...c.followUps, followUp], updatedAt: new Date().toISOString() }
+              : c
+          ),
+        })),
     }),
     { name: "forma-resume-data" }
   )

@@ -105,21 +105,38 @@ parsing the rendered PDF's actual page count — not just estimated from word co
 even the smallest safe density still overflows, the export still succeeds but the UI shows a warning toast
 telling you to trim content, rather than silently shipping a multi-page file.
 
+## Cold Email Intelligence Engine
+
+A second AI module at `/outreach`, optimizing purely for reply probability. Given who you're contacting, why,
+and what you already know about them, it generates 3 strategically different variants (insight-led, give-first,
+social-proof-led) with scored subject lines, scores each on the same kind of 9-category / 90+ target model as
+the resume scorer, and runs one truthful refinement pass on the weakest variant if none clears 90. It also
+supports generating follow-ups that add something new each time (never "just checking in").
+
+**Important scope note:** this app has no live web browsing wired into its AI calls, so "research" here means
+facts *you* supply (a LinkedIn post you saw, a job posting detail) — not an automated crawl. If the supplied
+context is too thin to write something genuinely personalized, the pipeline says so and asks clarifying
+questions instead of generating a generic-sounding email (verified in testing: thin input correctly returns
+`insufficientInfo` with 0 variants, rather than fabricating a personalization).
+
 ## Project layout
 
 ```
-src/lib/ai/            Gemini client, schemas, prompts, and the score-gate pipeline
+src/lib/ai/            Gemini client, schemas, prompts, and the score-gate pipeline (resume)
+src/lib/ai/coldEmail/  Cold-email stage prompts + generate/score/refine/follow-up calls
 src/lib/parsing/        PDF/DOCX/TXT text extraction
-src/lib/validation/     Local (non-AI) structural resume validation
+src/lib/validation/     Local (non-AI) structural checks for both resumes and cold emails
 src/lib/export/         PDF (react-pdf, 1-page shrink logic), DOCX (docx), and plain-text export
 src/lib/data/           Zustand + localStorage data layer (guest mode)
 src/lib/supabase/       Browser/server Supabase clients + auth middleware
 supabase/migrations/    SQL schema + RLS policies
 src/app/api/            parse-resume, analyze (streaming NDJSON), optimize/chat, optimize/rescore,
-                        optimize/regenerate-bullet, export/pdf, export/docx
-src/app/(dashboard)/    dashboard, resumes, resumes/[versionId] (editor+scores+chat), applications, settings
+                        optimize/regenerate-bullet, export/pdf, export/docx,
+                        cold-email/generate (streaming NDJSON), cold-email/follow-up
+src/app/(dashboard)/    dashboard, resumes, resumes/[versionId] (editor+scores+chat), applications,
+                        outreach, outreach/new, outreach/[id], settings
 src/app/(auth)/         login, signup
-src/components/         upload, jd, analysis, scoring, editor (incl. resume-chat), layout, auth
+src/components/         upload, jd, analysis, scoring, editor (incl. resume-chat), coldEmail, layout, auth
 ```
 
 ## Notes

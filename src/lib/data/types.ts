@@ -6,6 +6,7 @@ import type {
   ApplicationRecord,
   ChatMessage,
 } from "@/types/resume";
+import type { ColdEmailInput, ColdEmailResult, FollowUpMessage } from "@/types/coldEmail";
 
 export interface SavedResume {
   id: string;
@@ -46,3 +47,13 @@ export interface SavedResumeVersion {
 }
 
 export type SavedApplication = ApplicationRecord;
+
+export interface SavedColdEmail {
+  id: string;
+  label: string; // e.g. "Jane Doe @ Acme Corp"
+  input: ColdEmailInput;
+  result: ColdEmailResult;
+  followUps: FollowUpMessage[];
+  createdAt: string;
+  updatedAt: string;
+}

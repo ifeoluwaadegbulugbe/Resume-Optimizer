@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, FolderOpen, Briefcase, Plus, Menu, Sparkles } from "lucide-react";
+import { LayoutGrid, FolderOpen, Briefcase, Plus, Menu, Sparkles, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: LayoutGrid },
   { href: "/resumes", label: "My Resumes", icon: FolderOpen },
   { href: "/applications", label: "Applications", icon: Briefcase },
+  { href: "/outreach", label: "Cold Outreach", icon: Mail },
 ];
 
 export function MobileNav() {
